@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="version 1.0.0" src="https://img.shields.io/badge/version-1.0.0-orange">
-  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white">
+  <img alt="Python 3.10–3.13" src="https://img.shields.io/badge/python-3.10--3.13-blue?logo=python&logoColor=white">
   <img alt="Conda md_webui" src="https://img.shields.io/badge/conda-md__webui-44A833?logo=anaconda&logoColor=white">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
@@ -31,7 +31,7 @@ The launcher uses whichever Python setup it finds, in this order:
 1. [uv](https://docs.astral.sh/uv/getting-started/installation/), if installed: `uv run --no-dev python run.py` (uv creates and syncs `.venv` automatically).
 2. An existing `.venv`, installing `requirements.txt` into it when dependencies are missing.
 3. A Conda environment named **`md_webui`** (create it with `conda env create -f environment.yml`).
-4. Otherwise, Python 3.10 or newer on `PATH`: it creates `.venv` and installs `requirements.txt`.
+4. Otherwise, Python 3.10 to 3.13 on `PATH`: it creates `.venv` and installs `requirements.txt`.
 
 The project follows the Python requirement declared by MarkItDown 0.1.7. The service listens only on the local loopback interface and is not exposed to the LAN or internet.
 

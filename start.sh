@@ -3,7 +3,7 @@
 # uv, then .venv, then the md_webui Conda environment, then a new .venv.
 set -e
 cd "$(dirname "$0")"
-CHECK='import sys, markitdown, fastapi, uvicorn; sys.exit(sys.version_info < (3, 10))'
+CHECK='import sys, markitdown, fastapi, uvicorn; sys.exit(not (3, 10) <= sys.version_info[:2] <= (3, 13))'
 
 if command -v uv >/dev/null 2>&1; then
     echo "Using uv."
@@ -16,8 +16,8 @@ if [ ! -x .venv/bin/python ]; then
         exec conda run -n md_webui --no-capture-output python run.py
     fi
     if ! command -v python3 >/dev/null 2>&1 \
-        || ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then
-        echo "Python 3.10 or newer was not found. Install uv or Python, then run this file again." >&2
+        || ! python3 -c 'import sys; sys.exit(not (3, 10) <= sys.version_info[:2] <= (3, 13))'; then
+        echo "Python 3.10 to 3.13 was not found. Install uv or Python, then run this file again." >&2
         exit 1
     fi
     echo "Creating .venv."

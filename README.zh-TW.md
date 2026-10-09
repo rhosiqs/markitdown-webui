@@ -10,7 +10,7 @@
 
 <p align="center">
   <img alt="version 1.0.0" src="https://img.shields.io/badge/version-1.0.0-orange">
-  <img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-blue?logo=python&logoColor=white">
+  <img alt="Python 3.10–3.13" src="https://img.shields.io/badge/python-3.10--3.13-blue?logo=python&logoColor=white">
   <img alt="Conda md_webui" src="https://img.shields.io/badge/conda-md__webui-44A833?logo=anaconda&logoColor=white">
   <a href="LICENSE"><img alt="license MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
@@ -31,7 +31,7 @@
 1. 已安裝 [uv](https://docs.astral.sh/uv/getting-started/installation/) 時：`uv run --no-dev python run.py`（uv 會自動建立並同步 `.venv`）。
 2. 既有的 `.venv`；缺少依賴時會安裝 `requirements.txt`。
 3. 名為 **`md_webui`** 的 Conda 環境（以 `conda env create -f environment.yml` 建立）。
-4. 以上皆無時，使用 `PATH` 上的 Python 3.10 以上版本建立 `.venv` 並安裝 `requirements.txt`。
+4. 以上皆無時，使用 `PATH` 上的 Python 3.10 至 3.13 版本建立 `.venv` 並安裝 `requirements.txt`。
 
 本專案遵循 MarkItDown 0.1.7 宣告的 Python 版本需求。服務只監聽本機 loopback 介面，不對區域網路或網際網路開放。
 

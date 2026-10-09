@@ -3,7 +3,7 @@ rem Start MarkItDown Web with whichever Python setup is available:
 rem uv, then .venv, then the md_webui Conda environment, then a new .venv.
 setlocal
 cd /d "%~dp0"
-set "CHECK=import sys, markitdown, fastapi, uvicorn; sys.exit(sys.version_info < (3, 10))"
+set "CHECK=import sys, markitdown, fastapi, uvicorn; sys.exit(not (3, 10) <= sys.version_info[:2] <= (3, 13))"
 
 where uv >nul 2>nul
 if not errorlevel 1 (
@@ -29,10 +29,12 @@ if not errorlevel 1 (
 )
 
 set "BASE="
-py -3 -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>nul && set "BASE=py -3"
-if not defined BASE python -c "import sys; sys.exit(sys.version_info < (3, 10))" >nul 2>nul && set "BASE=python"
+for %%V in (3.13 3.12 3.11 3.10) do (
+    if not defined BASE py -%%V -c "import sys" >nul 2>nul && set "BASE=py -%%V"
+)
+if not defined BASE python -c "import sys; sys.exit(not (3, 10) <= sys.version_info[:2] <= (3, 13))" >nul 2>nul && set "BASE=python"
 if not defined BASE (
-    echo Python 3.10 or newer was not found. Install uv or Python, then run this file again.
+    echo Python 3.10 to 3.13 was not found. Install uv or Python, then run this file again.
     goto :fail
 )
 echo Creating .venv.
