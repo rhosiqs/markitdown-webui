@@ -19,79 +19,21 @@ A lightweight local web interface powered by Microsoft MarkItDown. Upload a docu
 
 ## Usage
 
-Use Python 3.10 or newer to run the local service, then open it in a browser. The project follows the Python requirement declared by MarkItDown 0.1.7. The same commands work in Windows PowerShell, macOS, and Linux.
+Run the launcher from the repository root:
 
-### uv (project setup)
+- Windows: double-click `start.bat`, or run `.\start.bat` in PowerShell.
+- macOS and Linux: run `./start.sh`.
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if it is not already available.
+Then open `http://localhost:8765` in your browser. Stop the service with `Ctrl+C` in the terminal where it is running.
 
-On macOS and Linux:
+The launcher uses whichever Python setup it finds, in this order:
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+1. [uv](https://docs.astral.sh/uv/getting-started/installation/), if installed: `uv run --no-dev python run.py` (uv creates and syncs `.venv` automatically).
+2. An existing `.venv`, installing `requirements.txt` into it when dependencies are missing.
+3. A Conda environment named **`md_webui`** (create it with `conda env create -f environment.yml`).
+4. Otherwise, Python 3.10 or newer on `PATH`: it creates `.venv` and installs `requirements.txt`.
 
-On Windows PowerShell:
-
-```powershell
-irm https://astral.sh/uv/install.ps1 | iex
-```
-
-From the repository root, create or update the project environment and start the service:
-
-```bash
-uv sync --no-dev
-uv run --no-dev python run.py
-```
-
-uv manages the project-local `.venv` automatically; you do not need to run `uv venv` or activate the environment manually. The `.venv` directory is local and ignored by Git.
-
-### Python virtual environment
-
-From the repository root, create a virtual environment and install the dependencies:
-
-```bash
-python -m venv .venv
-```
-
-Activate it on Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-Or activate it on macOS and Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-Then start the service:
-
-```bash
-pip install -r requirements.txt
-python run.py
-```
-
-### Conda / Miniconda
-
-From the repository root:
-
-```bash
-conda env create -f environment.yml
-conda activate md_webui
-python run.py
-```
-
-Then open `http://localhost:8765` in your browser.
-
-`environment.yml` creates the default Conda environment as **`md_webui`**, lets Conda manage a compatible Python version, and installs the project's Python packages from `requirements.txt` inside that environment. To refresh an existing environment after dependency changes, run:
-
-```bash
-conda env update -f environment.yml --prune
-```
-
-The service listens only on the local loopback interface and is not exposed to the LAN or internet. Stop it with `Ctrl+C` in the terminal where it is running.
+The project follows the Python requirement declared by MarkItDown 0.1.7. The service listens only on the local loopback interface and is not exposed to the LAN or internet.
 
 ## Features
 
@@ -114,7 +56,7 @@ Browser
   └─ Blob download      ──> Markdown edited by the user
 ```
 
-Key files: `app/main.py` (HTTP endpoints, limits, and security headers), `app/converter.py` (stream conversion), `app/preview.py` (Markdown rendering and sanitization), `app/static/` (framework-free frontend), and `run.py` (local server entry point).
+Key files: `app/main.py` (HTTP endpoints, limits, and security headers), `app/converter.py` (stream conversion), `app/preview.py` (Markdown rendering and sanitization), `app/static/` (framework-free frontend), `run.py` (local server entry point), and `start.bat` / `start.sh` (launchers).
 
 ## Development
 

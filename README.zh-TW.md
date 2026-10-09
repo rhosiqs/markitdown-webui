@@ -19,79 +19,21 @@
 
 ## 使用方式
 
-使用 Python 3.10 或更新版本啟動本機服務，再透過瀏覽器開啟。本專案遵循 MarkItDown 0.1.7 宣告的 Python 版本需求。Windows PowerShell、macOS 與 Linux 都使用相同的流程。
+在 repository 根目錄執行啟動程式：
 
-### uv（專案環境）
+- Windows：雙擊 `start.bat`，或在 PowerShell 執行 `.\start.bat`。
+- macOS 與 Linux：執行 `./start.sh`。
 
-如果尚未安裝，請先依照 [uv 官方安裝說明](https://docs.astral.sh/uv/getting-started/installation/) 安裝 uv。
+然後在瀏覽器開啟 `http://localhost:8765`。要停止服務，請在執行中的終端按 `Ctrl+C`。
 
-macOS 與 Linux：
+啟動程式會依下列順序使用找到的 Python 環境：
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+1. 已安裝 [uv](https://docs.astral.sh/uv/getting-started/installation/) 時：`uv run --no-dev python run.py`（uv 會自動建立並同步 `.venv`）。
+2. 既有的 `.venv`；缺少依賴時會安裝 `requirements.txt`。
+3. 名為 **`md_webui`** 的 Conda 環境（以 `conda env create -f environment.yml` 建立）。
+4. 以上皆無時，使用 `PATH` 上的 Python 3.10 以上版本建立 `.venv` 並安裝 `requirements.txt`。
 
-Windows PowerShell：
-
-```powershell
-irm https://astral.sh/uv/install.ps1 | iex
-```
-
-在 repository 根目錄建立或更新專案環境，並啟動服務：
-
-```bash
-uv sync --no-dev
-uv run --no-dev python run.py
-```
-
-uv 會自動管理專案本機的 `.venv`；不需要手動執行 `uv venv` 或啟用環境。`.venv` 只存在本機，且已被 Git 忽略。
-
-### Python 虛擬環境
-
-在 repository 根目錄建立虛擬環境：
-
-```bash
-python -m venv .venv
-```
-
-Windows PowerShell 啟用方式：
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-macOS 與 Linux 啟用方式：
-
-```bash
-source .venv/bin/activate
-```
-
-接著安裝依賴並啟動服務：
-
-```bash
-pip install -r requirements.txt
-python run.py
-```
-
-### Conda / Miniconda
-
-在 repository 根目錄執行：
-
-```bash
-conda env create -f environment.yml
-conda activate md_webui
-python run.py
-```
-
-然後在瀏覽器開啟 `http://localhost:8765`。
-
-`environment.yml` 預設會建立名為 **`md_webui`** 的 Conda 環境，讓 Conda 管理相容的 Python 版本，並在該環境內透過 `requirements.txt` 安裝專案所需的 Python 套件。依賴更新後，可用以下指令更新既有環境：
-
-```bash
-conda env update -f environment.yml --prune
-```
-
-服務只監聽本機 loopback 介面，不對區域網路或網際網路開放。要停止服務，請在執行中的終端按 `Ctrl+C`。
+本專案遵循 MarkItDown 0.1.7 宣告的 Python 版本需求。服務只監聽本機 loopback 介面，不對區域網路或網際網路開放。
 
 ## 功能
 
@@ -114,7 +56,7 @@ conda env update -f environment.yml --prune
   └─ Blob 下載          ──> 使用者編輯後的 Markdown
 ```
 
-主要檔案：`app/main.py`（HTTP 端點、大小限制與安全標頭）、`app/converter.py`（MarkItDown 串流轉換封裝）、`app/preview.py`（Markdown 渲染與 HTML 清理）、`app/static/`（無框架前端）與 `run.py`（本機服務入口）。
+主要檔案：`app/main.py`（HTTP 端點、大小限制與安全標頭）、`app/converter.py`（MarkItDown 串流轉換封裝）、`app/preview.py`（Markdown 渲染與 HTML 清理）、`app/static/`（無框架前端）、`run.py`（本機服務入口）與 `start.bat` / `start.sh`（啟動程式）。
 
 ## 開發
 
