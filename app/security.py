@@ -33,13 +33,13 @@ ALLOWED_EXTENSIONS = frozenset(
 
 def safe_filename(filename: str | None) -> str:
     if not filename:
-        raise ValueError("檔案缺少名稱。")
+        raise ValueError("The file has no name.")
     normalized = filename.replace("\\", "/")
     basename = Path(normalized).name.strip()
     if not basename or basename in {".", ".."}:
-        raise ValueError("檔案名稱無效。")
+        raise ValueError("The file name is invalid.")
     if len(basename) > 240:
-        raise ValueError("檔案名稱過長。")
+        raise ValueError("The file name is too long.")
     return basename
 
 
@@ -47,7 +47,7 @@ def validate_extension(filename: str) -> str:
     extension = Path(filename).suffix.lower()
     if not extension or extension not in ALLOWED_EXTENSIONS:
         allowed = ", ".join(sorted(ALLOWED_EXTENSIONS))
-        raise ValueError(f"不支援此檔案格式。可用格式：{allowed}")
+        raise ValueError(f"Unsupported file format. Supported formats: {allowed}")
     return extension
 
 

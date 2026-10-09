@@ -17,7 +17,7 @@ const downloadButton = document.getElementById("downloadButton");
 let outputFilename = "converted.md";
 let renderTimer = null;
 let renderSequence = 0;
-let locale = localStorage.getItem("markitdown-web-locale") || "en-US";
+let locale = "en-US";
 
 const translations = {
   "en-US": {
@@ -56,10 +56,14 @@ function applyLocale() {
 }
 document.getElementById("languageSwitch").addEventListener("click", () => {
   locale = locale === "en-US" ? "zh-TW" : "en-US";
-  localStorage.setItem("markitdown-web-locale", locale);
+  try { localStorage.setItem("markitdown-web-language", locale); } catch {}
   applyLocale();
   resetWorkspace();
 });
+try {
+  const savedLocale = localStorage.getItem("markitdown-web-language");
+  if (savedLocale in translations) locale = savedLocale;
+} catch {}
 applyLocale();
 
 chooseButton.addEventListener("click", (event) => {

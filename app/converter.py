@@ -9,7 +9,7 @@ def convert_bytes(data: bytes, extension: str) -> str:
     try:
         from markitdown import MarkItDown, StreamInfo
     except ImportError as exc:  # pragma: no cover - dependency installation issue
-        raise RuntimeError("MarkItDown 尚未安裝，請執行 pip install -r requirements.txt。") from exc
+        raise RuntimeError("MarkItDown is not installed. Run pip install -r requirements.txt.") from exc
 
     converter = MarkItDown(enable_plugins=False)
     stream_info = StreamInfo(extension=extension)
@@ -19,5 +19,5 @@ def convert_bytes(data: bytes, extension: str) -> str:
     if markdown is None:
         markdown = getattr(result, "text_content", None)
     if not isinstance(markdown, str):
-        raise RuntimeError("轉換器未回傳 Markdown 文字。")
+        raise RuntimeError("The converter did not return Markdown text.")
     return markdown

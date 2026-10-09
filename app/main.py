@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import mimetypes
 import time
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse
@@ -12,6 +13,11 @@ from .config import BASE_DIR, SETTINGS
 from .converter import convert_bytes
 from .preview import render_markdown
 from .security import output_filename, safe_filename, validate_extension
+
+# Windows reads MIME types from the registry, which often maps .js to text/plain.
+# With the nosniff header the browser then refuses to run the script.
+mimetypes.add_type("text/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
 
 app = FastAPI(
     title=SETTINGS.app_name,
@@ -69,7 +75,7 @@ async def convert(file: UploadFile = File(...)) -> dict[str, object]:
     started = time.perf_counter()
     data = await _read_limited(file, SETTINGS.max_upload_bytes)
     if not data:
-        raise HTTPException(status_code=400, detail="檔案內容為空。")
+        raise HTTPException(status_code=400, detail="The file is empty.")
 
     try:
         markdown = await asyncio.to_thread(convert_bytes, data, extension)
@@ -103,7 +109,7 @@ async def _read_limited(file: UploadFile, limit: int) -> bytes:
         if total > limit:
             raise HTTPException(
                 status_code=413,
-                detail=f"檔案超過 {limit // (1024 * 1024)} MB 上限。",
+                detail=f"The file exceeds the {limit // (1024 * 1024)} MB limit.",
             )
         chunks.append(chunk)
     return b"".join(chunks)
@@ -113,9 +119,9 @@ def _humanize_conversion_error(exc: Exception) -> str:
     message = str(exc).strip()
     lowered = message.lower()
     if "missingdependency" in lowered or "install" in lowered and "markitdown" in lowered:
-        return "此格式需要額外轉換元件。請執行 pip install -r requirements.txt 以修復依賴套件。"
+        return "This format needs extra conversion components. Run pip install -r requirements.txt to install them."
     if "not a valid office open xml" in lowered:
-        return "檔案不是有效的 Office Open XML 文件，或檔案已損壞。"
+        return "The file is not a valid Office Open XML document, or it is damaged."
     if not message:
-        return "轉換失敗，檔案可能已損壞或格式不相容。"
-    return f"轉換失敗：{message[:500]}"
+        return "Conversion failed. The file may be damaged or in an unsupported format."
+    return f"Conversion failed: {message[:500]}"

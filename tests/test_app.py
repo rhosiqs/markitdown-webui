@@ -59,3 +59,11 @@ def test_rejects_unknown_extension() -> None:
         files={"file": ("malware.exe", b"not really", "application/octet-stream")},
     )
     assert response.status_code == 400
+
+
+def test_static_assets_have_browser_mime_types() -> None:
+    script_response = client.get("/static/app.js")
+    styles_response = client.get("/static/styles.css")
+
+    assert script_response.headers["content-type"].startswith("text/javascript")
+    assert styles_response.headers["content-type"].startswith("text/css")
