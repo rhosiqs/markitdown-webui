@@ -27,8 +27,8 @@ const translations = {
     copy: "Copy", clear: "Clear", download: "Download .md", markdownSource: "Markdown source", livePreview: "Live preview",
     emptyPreview: "The rendered result will appear here after conversion.", poweredBy: "Powered by Microsoft MarkItDown", noUpload: "Files are not uploaded to external services",
     editorPlaceholder: "Upload a document and the converted result will appear here.", editorLabel: "Markdown source editor",
-    notSelected: "No file selected", afterConvert: "The converted content can be edited below", chars: "characters", waiting: "Waiting for content", updating: "Updating…", synced: "Synced", failed: "Conversion failed", previewError: "Preview error", emptyMarkdown: "Markdown content is empty.",
-    ready: (bytes) => `${bytes} · Ready to convert`, output: (bytes, ms, chars) => `${bytes} · ${ms.toLocaleString()} ms · ${chars.toLocaleString()} characters`, conversionFailed: "Conversion failed.", unable: "Unable to complete the conversion.", previewFailed: "Preview failed.", copied: "Copied", switchLanguage: "Chinese"
+    notSelected: "No file selected", afterConvert: "The converted content can be edited below", chars: "characters", waiting: "Waiting for content", convertingState: "Converting…", updating: "Updating…", synced: "Synced", failed: "Conversion failed", previewError: "Preview error", emptyMarkdown: "Markdown content is empty.",
+    converting: (bytes, seconds) => `${bytes} · Converting… ${seconds}s`, output: (bytes, ms, chars) => `${bytes} · ${ms.toLocaleString()} ms · ${chars.toLocaleString()} characters`, conversionFailed: "Conversion failed.", unable: "Unable to complete the conversion.", previewFailed: "Preview failed.", copied: "Copied", switchLanguage: "Chinese"
   },
   "zh-TW": {
     brandTagline: "本機文件轉 Markdown 工作台", localOnly: "僅限本機", chooseFile: "選擇檔案",
@@ -37,8 +37,8 @@ const translations = {
     copy: "複製", clear: "清除", download: "下載 .md", markdownSource: "Markdown 程式碼", livePreview: "即時預覽",
     emptyPreview: "轉換後的排版效果會顯示在此處。", poweredBy: "由 Microsoft MarkItDown 驅動", noUpload: "檔案不會上傳至外部服務",
     editorPlaceholder: "上傳文件後，轉換結果會顯示在這裡。", editorLabel: "Markdown 程式碼編輯器",
-    notSelected: "尚未選擇檔案", afterConvert: "轉換後可在下方直接編輯", chars: "字元", waiting: "等待內容", updating: "更新中…", synced: "已同步", failed: "轉換失敗", previewError: "預覽錯誤", emptyMarkdown: "Markdown 內容為空。",
-    ready: (bytes) => `${bytes} · 準備轉換`, output: (bytes, ms, chars) => `${bytes} · ${ms.toLocaleString()} ms · 輸出 ${chars.toLocaleString()} 字元`, conversionFailed: "轉換失敗。", unable: "無法完成轉換。", previewFailed: "預覽失敗。", copied: "已複製", switchLanguage: "English"
+    notSelected: "尚未選擇檔案", afterConvert: "轉換後可在下方直接編輯", chars: "字元", waiting: "等待內容", convertingState: "轉換中…", updating: "更新中…", synced: "已同步", failed: "轉換失敗", previewError: "預覽錯誤", emptyMarkdown: "Markdown 內容為空。",
+    converting: (bytes, seconds) => `${bytes} · 轉換中… ${seconds} 秒`, output: (bytes, ms, chars) => `${bytes} · ${ms.toLocaleString()} ms · 輸出 ${chars.toLocaleString()} 字元`, conversionFailed: "轉換失敗。", unable: "無法完成轉換。", previewFailed: "預覽失敗。", copied: "已複製", switchLanguage: "English"
   }
 };
 const t = (key, ...args) => typeof translations[locale][key] === "function" ? translations[locale][key](...args) : translations[locale][key];
@@ -115,8 +115,14 @@ document.addEventListener("keydown", (event) => {
 async function convertFile(file) {
   chooseButton.disabled = true;
   fileName.textContent = file.name;
-  fileMeta.textContent = t("ready", formatBytes(file.size));
   fileType.textContent = extensionLabel(file.name);
+  previewState.textContent = t("convertingState");
+  const started = Date.now();
+  const showProgress = () => {
+    fileMeta.textContent = t("converting", formatBytes(file.size), Math.floor((Date.now() - started) / 1000));
+  };
+  showProgress();
+  const progressTimer = window.setInterval(showProgress, 1000);
 
   const formData = new FormData();
   formData.append("file", file);
@@ -145,6 +151,7 @@ async function convertFile(file) {
     downloadButton.disabled = true;
     previewState.textContent = t("failed");
   } finally {
+    window.clearInterval(progressTimer);
     chooseButton.disabled = false;
     fileInput.value = "";
   }

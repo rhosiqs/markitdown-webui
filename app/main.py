@@ -119,7 +119,10 @@ def _humanize_conversion_error(exc: Exception) -> str:
     message = str(exc).strip()
     lowered = message.lower()
     if "missingdependency" in lowered or "install" in lowered and "markitdown" in lowered:
-        return "This format needs extra conversion components. Run pip install -r requirements.txt to install them."
+        return (
+            "This format needs extra conversion components. "
+            "Run pip install -r requirements.txt to install them."
+        )
     if "not a valid office open xml" in lowered:
         return "The file is not a valid Office Open XML document, or it is damaged."
     if not message:
