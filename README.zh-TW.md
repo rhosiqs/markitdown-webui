@@ -24,7 +24,7 @@
 - Windows：雙擊 `start.bat`，或在 PowerShell 執行 `.\start.bat`。
 - macOS 與 Linux：執行 `./start.sh`。
 
-然後在瀏覽器開啟 `http://localhost:8765`。要停止服務，請在執行中的終端按 `Ctrl+C`。
+然後在瀏覽器開啟終端顯示的網址，通常是 `http://localhost:8765`；若該連接埠已被占用，會改用下一個可用的連接埠。要停止服務，請在執行中的終端按 `Ctrl+C`。
 
 啟動程式會依下列順序使用找到的 Python 環境：
 

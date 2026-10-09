@@ -2,6 +2,8 @@
 rem Start MarkItDown Web with whichever Python setup is available:
 rem uv, then .venv, then the md_webui Conda environment, then a new .venv.
 setlocal
+rem The project may sit on a different drive than the uv cache, where hardlinks fail.
+set "UV_LINK_MODE=copy"
 cd /d "%~dp0"
 set "CHECK=import sys, markitdown, fastapi, uvicorn; sys.exit(not (3, 10) <= sys.version_info[:2] <= (3, 13))"
 

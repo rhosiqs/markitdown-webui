@@ -24,7 +24,7 @@ Run the launcher from the repository root:
 - Windows: double-click `start.bat`, or run `.\start.bat` in PowerShell.
 - macOS and Linux: run `./start.sh`.
 
-Then open `http://localhost:8765` in your browser. Stop the service with `Ctrl+C` in the terminal where it is running.
+Then open the address it prints, normally `http://localhost:8765`; if that port is busy, the next free port is used. Stop the service with `Ctrl+C` in the terminal where it is running.
 
 The launcher uses whichever Python setup it finds, in this order:
 
