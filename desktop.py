@@ -15,6 +15,14 @@ import webview
 from app.config import SETTINGS
 from app.desktop import DesktopApi, build_page
 
+# WebView2 otherwise contacts Microsoft in the background (configuration, component updates,
+# SmartScreen). These switches turn that off and make every host name fail to resolve, so the
+# window stays offline. ElasticOverscroll repeats pywebview's own --disable-features value.
+OFFLINE_BROWSER_ARGUMENTS = (
+    "--disable-background-networking --disable-component-update --disable-domain-reliability "
+    "--disable-sync --no-pings --disable-features=ElasticOverscroll,msSmartScreenProtection "
+    '--host-resolver-rules="MAP * ~NOTFOUND"'
+)
 WEBVIEW2_MISSING = (
     "MarkItDown Web needs the Microsoft Edge WebView2 Runtime, which is included in "
     "Windows 11 and current Windows 10. Install it from Microsoft, then start the app again."
@@ -44,6 +52,7 @@ def main() -> int:
 
         func, args = run_self_test, (window, self_test)
 
+    os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = OFFLINE_BROWSER_ARGUMENTS
     # The packaged app has no console, so startup failures must surface in a dialog.
     try:
         if sys.platform == "win32":

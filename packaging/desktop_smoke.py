@@ -5,7 +5,7 @@ Windows only. Usage:
 
 The executable converts one sample of each main format in its real window (see
 app/selftest.py). Meanwhile this script polls netstat for sockets owned by the app's
-process tree: the app itself must own none. WebView2 helper processes are reported.
+process tree, WebView2 helpers included: there must be none.
 """
 
 from __future__ import annotations
@@ -166,11 +166,8 @@ def main(executable: str) -> int:
 
     print("processes:", ", ".join(sorted(names)))
     failures = []
-    app_name = Path(executable).name.lower()
     for owner, socket in sorted(sockets):
-        print(f"socket {owner}: {socket}")
-        if owner.lower() == app_name:
-            failures.append(f"the app opened a socket: {socket}")
+        failures.append(f"{owner} opened a socket: {socket}")
 
     result_path = folder / "result.json"
     if not result_path.exists():
