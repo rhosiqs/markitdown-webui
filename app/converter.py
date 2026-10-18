@@ -27,3 +27,19 @@ def convert_bytes(data: bytes, extension: str) -> str:
     if not isinstance(markdown, str):
         raise RuntimeError("The converter did not return Markdown text.")
     return markdown
+
+
+def describe_conversion_error(exc: Exception) -> str:
+    """Turn a converter exception into a short message for the user."""
+    message = str(exc).strip()
+    lowered = message.lower()
+    if "missingdependency" in lowered or "install" in lowered and "markitdown" in lowered:
+        return (
+            "This format needs extra conversion components. "
+            "Run pip install -r requirements.txt to install them."
+        )
+    if "not a valid office open xml" in lowered:
+        return "The file is not a valid Office Open XML document, or it is damaged."
+    if not message:
+        return "Conversion failed. The file may be damaged or in an unsupported format."
+    return f"Conversion failed: {message[:500]}"

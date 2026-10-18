@@ -10,7 +10,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from .config import BASE_DIR, SETTINGS
-from .converter import convert_bytes
+from .converter import convert_bytes, describe_conversion_error
 from .preview import render_markdown
 from .security import output_filename, safe_filename, validate_extension
 
@@ -80,7 +80,7 @@ async def convert(file: UploadFile = File(...)) -> dict[str, object]:
     try:
         markdown = await asyncio.to_thread(convert_bytes, data, extension)
     except Exception as exc:
-        detail = _humanize_conversion_error(exc)
+        detail = describe_conversion_error(exc)
         raise HTTPException(status_code=422, detail=detail) from exc
 
     return {
@@ -114,17 +114,3 @@ async def _read_limited(file: UploadFile, limit: int) -> bytes:
         chunks.append(chunk)
     return b"".join(chunks)
 
-
-def _humanize_conversion_error(exc: Exception) -> str:
-    message = str(exc).strip()
-    lowered = message.lower()
-    if "missingdependency" in lowered or "install" in lowered and "markitdown" in lowered:
-        return (
-            "This format needs extra conversion components. "
-            "Run pip install -r requirements.txt to install them."
-        )
-    if "not a valid office open xml" in lowered:
-        return "The file is not a valid Office Open XML document, or it is damaged."
-    if not message:
-        return "Conversion failed. The file may be damaged or in an unsupported format."
-    return f"Conversion failed: {message[:500]}"

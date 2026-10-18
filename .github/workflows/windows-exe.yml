@@ -22,7 +22,7 @@ jobs:
         run: uv run --group build pyinstaller --noconfirm --clean packaging/markitdown-web.spec
 
       - name: Smoke-test executable
-        run: uv run --group build python packaging/smoke_test.py dist/MarkItDown-Web.exe
+        run: uv run --group build python packaging/desktop_smoke.py dist/MarkItDown-Web.exe
 
       - uses: actions/upload-artifact@v6
         with:

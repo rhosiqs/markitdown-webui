@@ -6,8 +6,13 @@
   <meta name="color-scheme" content="light dark">
   <meta name="description" content="Convert documents to Markdown locally with live preview, editing, and download.">
   <title>{{ app_name }}</title>
+{% if inline_assets %}
+  <meta http-equiv="Content-Security-Policy" content="{{ inline_assets.csp }}">
+  <style>{{ inline_assets.styles | safe }}</style>
+{% else %}
   <link rel="stylesheet" href="{{ url_for('static', path='/styles.css') }}">
   <script src="{{ url_for('static', path='/app.js') }}" defer></script>
+{% endif %}
 </head>
 <body>
   <header class="topbar">
@@ -92,5 +97,8 @@
     <span data-i18n="poweredBy">Powered by Microsoft MarkItDown</span>
     <span data-i18n="noUpload">Files are not uploaded to external services</span>
   </footer>
+{% if inline_assets %}
+  <script>{{ inline_assets.script | safe }}</script>
+{% endif %}
 </body>
 </html>

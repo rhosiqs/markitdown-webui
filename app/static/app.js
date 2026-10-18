@@ -18,6 +18,9 @@ let outputFilename = "converted.md";
 let renderTimer = null;
 let renderSequence = 0;
 let locale = "en-US";
+// Inside the desktop app, pywebview exposes the Python bridge here and there is no server.
+const desktopApi = () => window.pywebview?.api;
+const UPLOAD_CHUNK_BYTES = 4 * 1024 * 1024;
 
 const translations = {
   "en-US": {
@@ -124,14 +127,8 @@ async function convertFile(file) {
   showProgress();
   const progressTimer = window.setInterval(showProgress, 1000);
 
-  const formData = new FormData();
-  formData.append("file", file);
-
   try {
-    const response = await fetch("/api/convert", { method: "POST", body: formData });
-    const payload = await readJson(response);
-    if (!response.ok) throw new Error(payload.detail || t("conversionFailed"));
-
+    const payload = desktopApi() ? await convertWithDesktop(file) : await convertWithServer(file);
     outputFilename = payload.output_filename || "converted.md";
     markdownEditor.value = payload.markdown || "";
     markdownEditor.disabled = false;
@@ -157,6 +154,42 @@ async function convertFile(file) {
   }
 }
 
+async function convertWithServer(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch("/api/convert", { method: "POST", body: formData });
+  const payload = await readJson(response);
+  if (!response.ok) throw new Error(payload.detail || t("conversionFailed"));
+  return payload;
+}
+
+async function convertWithDesktop(file) {
+  const api = desktopApi();
+  const begun = await api.begin_upload(file.name, file.size);
+  if (begun.error) throw new Error(begun.error);
+  try {
+    for (let offset = 0; offset < file.size; offset += UPLOAD_CHUNK_BYTES) {
+      const sent = await api.upload_chunk(begun.upload_id, await readBase64(file.slice(offset, offset + UPLOAD_CHUNK_BYTES)));
+      if (sent.error) throw new Error(sent.error);
+    }
+  } catch (error) {
+    api.cancel_upload(begun.upload_id);
+    throw error;
+  }
+  const payload = await api.finish_upload(begun.upload_id);
+  if (payload.error) throw new Error(payload.error);
+  return payload;
+}
+
+function readBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",", 2)[1] || "");
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
 function scheduleRender() {
   window.clearTimeout(renderTimer);
   previewState.textContent = t("updating");
@@ -166,13 +199,8 @@ function scheduleRender() {
 async function renderPreview(markdown) {
   const sequence = ++renderSequence;
   try {
-    const response = await fetch("/api/render", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ markdown }),
-    });
-    const payload = await readJson(response);
-    if (!response.ok) throw new Error(payload.detail || t("previewFailed"));
+    const payload = desktopApi() ? await desktopApi().render(markdown) : await renderWithServer(markdown);
+    if (payload.error) throw new Error(payload.error);
     if (sequence !== renderSequence) return;
 
     markdownPreview.classList.remove("empty");
@@ -190,19 +218,36 @@ async function renderPreview(markdown) {
   }
 }
 
+async function renderWithServer(markdown) {
+  const response = await fetch("/api/render", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ markdown }),
+  });
+  const payload = await readJson(response);
+  if (!response.ok) throw new Error(payload.detail || t("previewFailed"));
+  return payload;
+}
+
 async function copyMarkdown() {
   try {
     await navigator.clipboard.writeText(markdownEditor.value);
-    const previous = copyButton.textContent;
-    copyButton.textContent = t("copied");
-    window.setTimeout(() => { copyButton.textContent = previous; }, 1200);
   } catch {
+    // The desktop window loads the page without an origin, where the Clipboard API is unavailable.
     markdownEditor.select();
-    document.execCommand("copy");
+    if (!document.execCommand("copy")) return;
   }
+  const previous = copyButton.textContent;
+  copyButton.textContent = t("copied");
+  window.setTimeout(() => { copyButton.textContent = previous; }, 1200);
 }
 
-function downloadMarkdown() {
+async function downloadMarkdown() {
+  if (desktopApi()) {
+    const result = await desktopApi().save_markdown(outputFilename, markdownEditor.value);
+    if (result.error) showError(result.error);
+    return;
+  }
   const blob = new Blob([markdownEditor.value], { type: "text/markdown;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
