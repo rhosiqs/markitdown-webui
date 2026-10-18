@@ -10,6 +10,7 @@ uv run pytest                             # all tests
 uv run pytest tests/test_app.py::test_health   # single test
 uv run ruff check .                       # lint
 ./start.sh                                # run the app (start.bat on Windows)
+uv run --group desktop python desktop.py   # desktop window from source (no server)
 build_exe.bat                             # Windows only: build dist\MarkItDown-Web.exe
 ```
 
@@ -21,11 +22,12 @@ The app serves at `http://localhost:8765`; `run.py` falls back to the next free 
 - Python is capped at 3.10–3.13 (`.python-version` pins 3.12 for uv) because `onnxruntime`, pulled in by `markitdown` → `magika`, has no 3.14 wheels in the locked version. Keep the cap consistent across `pyproject.toml`, both Conda files, and both launchers.
 - `start.bat` / `start.sh` pick the first available setup: uv → existing `.venv` → Conda `md_webui` → create `.venv` from a system Python. `.gitattributes` forces LF everywhere except `*.bat` (CRLF, required by cmd.exe).
 
-## Portable executable
+## Desktop executable
 
-- `packaging/markitdown-web.spec` builds a one-file, console PyInstaller executable from `run.py`; it lists `app/static` and `app/templates` as data and uses `collect_all` for packages that read their own data at runtime (magika model, pdfminer cmaps, pptx templates). Add a package there if a new dependency loads files from its install folder.
-- `run.py` detects `sys.frozen`: it then opens the browser once the port answers (`MARKITDOWN_WEB_OPEN_BROWSER=0` disables) and waits for Enter before exiting on startup errors.
-- PyInstaller cannot cross-compile. `.github/workflows/windows-exe.yml` builds on Windows and runs `packaging/smoke_test.py` against the exe; the same spec and smoke test also run on Linux to check packaging. `pyinstaller` lives in the `build` dependency group (`uv run --group build ...`).
+- `desktop.py` is the entry point of the portable Windows exe: a pywebview (WebView2) window with no HTTP server and no port. It loads `build_page()` from `app/desktop.py` (index.html with app.js/styles.css inlined under a hash-based CSP that allows `'unsafe-eval'` for pywebview's bridge and `connect-src 'none'`). `app.js` detects `window.pywebview.api` and calls `DesktopApi` (chunked base64 upload, render, native save dialog) instead of `fetch`. Keep both paths working; the web server (`run.py`) is still the source/non-Windows path.
+- pywebview overrides `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS`, so `desktop.py` swaps in a WebView2 subclass to add the offline switches. Recheck this if pywebview is upgraded.
+- `packaging/markitdown-web.spec` builds a one-file windowed exe; it uses `collect_all` for packages that read their own data at runtime (magika model, pdfminer cmaps, pptx templates). Add a package there if a new dependency loads files from its install folder.
+- PyInstaller cannot cross-compile. `.github/workflows/windows-exe.yml` builds on Windows and runs `packaging/desktop_smoke.py`, which drives the real window via `app/selftest.py` (enabled by `MARKITDOWN_DESKTOP_SELFTEST`) and fails on any socket owned by the app's process tree. `pywebview` is in the `desktop` group and `pyinstaller` in `build` (which includes `desktop`): `uv run --group build ...`.
 
 ## Architecture
 
