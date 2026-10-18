@@ -24,7 +24,7 @@ jobs:
       - name: Smoke-test executable
         run: uv run --group build python packaging/smoke_test.py dist/MarkItDown-Web.exe
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: MarkItDown-Web-windows
           path: dist/MarkItDown-Web.exe
