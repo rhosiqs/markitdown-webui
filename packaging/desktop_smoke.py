@@ -110,29 +110,30 @@ SAMPLES = {
 }
 
 
-def _process_tree(root: int) -> dict[int, str]:
+def _process_tree(root: int) -> dict[int, tuple[str, str]]:
+    """Map each descendant of root to its (name, command line)."""
     listing = subprocess.run(
         ["powershell", "-NoProfile", "-Command",
-         "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name"
+         "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine"
          " | ConvertTo-Csv -NoTypeInformation"],
         capture_output=True, text=True, check=True,
     ).stdout
     rows = list(csv.DictReader(io.StringIO(listing)))
-    children: dict[int, list[tuple[int, str]]] = {}
+    children: dict[int, list[tuple[int, tuple[str, str]]]] = {}
     for row in rows:
         children.setdefault(int(row["ParentProcessId"]), []).append(
-            (int(row["ProcessId"]), row["Name"]))
+            (int(row["ProcessId"]), (row["Name"], row["CommandLine"] or "")))
     tree, pending = {}, [root]
     while pending:
         pid = pending.pop()
-        for child, name in children.get(pid, []):
+        for child, info in children.get(pid, []):
             if child not in tree:
-                tree[child] = name
+                tree[child] = info
                 pending.append(child)
     return tree
 
 
-def _sockets(pids: dict[int, str]) -> set[tuple[str, str]]:
+def _sockets(pids: dict[int, tuple[str, str]]) -> set[tuple[str, str]]:
     output = subprocess.run(["netstat", "-ano"], capture_output=True, text=True).stdout
     found = set()
     for line in output.splitlines():
@@ -140,7 +141,7 @@ def _sockets(pids: dict[int, str]) -> set[tuple[str, str]]:
         if parts and parts[0] in {"TCP", "UDP"} and parts[-1].isdigit():
             pid = int(parts[-1])
             if pid in pids:
-                found.add((pids[pid], " ".join(parts[:-1])))
+                found.add((pids[pid][0], " ".join(parts[:-1])))
     return found
 
 
@@ -152,11 +153,15 @@ def main(executable: str) -> int:
     process = subprocess.Popen([executable], env=env)
     sockets: set[tuple[str, str]] = set()
     names: set[str] = set()
+    browser_commands: set[str] = set()
     deadline = time.monotonic() + 300
     while process.poll() is None and time.monotonic() < deadline:
         tree = _process_tree(process.pid)
-        tree[process.pid] = Path(executable).name
-        names.update(tree.values())
+        tree[process.pid] = (Path(executable).name, executable)
+        for name, command in tree.values():
+            names.add(name)
+            if name.lower() == "msedgewebview2.exe" and "--type=" not in command:
+                browser_commands.add(command)
         sockets |= _sockets(tree)
         time.sleep(0.5)
     if process.poll() is None:
@@ -165,6 +170,8 @@ def main(executable: str) -> int:
         return 1
 
     print("processes:", ", ".join(sorted(names)))
+    for command in sorted(browser_commands):
+        print("WebView2 browser process:", command)
     failures = []
     for owner, socket in sorted(sockets):
         failures.append(f"{owner} opened a socket: {socket}")
