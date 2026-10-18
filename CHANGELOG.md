@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added a portable single-file Windows executable (`build_exe.bat`, built and smoke-tested in GitHub Actions).
+
 ## 1.0.0 — 2026-07-31
 
 - Added drag-and-drop local file conversion.

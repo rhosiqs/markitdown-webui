@@ -10,6 +10,7 @@ uv run pytest                             # all tests
 uv run pytest tests/test_app.py::test_health   # single test
 uv run ruff check .                       # lint
 ./start.sh                                # run the app (start.bat on Windows)
+build_exe.bat                             # Windows only: build dist\MarkItDown-Web.exe
 ```
 
 The app serves at `http://localhost:8765`; `run.py` falls back to the next free port if 8765 is busy. `MARKITDOWN_WEB_PORT` and `MARKITDOWN_WEB_MAX_MB` (1–512, default 64) override defaults.
@@ -19,6 +20,12 @@ The app serves at `http://localhost:8765`; `run.py` falls back to the next free 
 - `pyproject.toml` + `uv.lock` are the source of truth. `requirements.txt` and `requirements-dev.txt` are generated exports used by the venv and Conda paths (`environment.yml` → env `md_webui`, `environment-dev.yml` → `md_webui-dev`). After changing dependencies: `uv lock`, then regenerate both files with the `uv export` command recorded in their headers.
 - Python is capped at 3.10–3.13 (`.python-version` pins 3.12 for uv) because `onnxruntime`, pulled in by `markitdown` → `magika`, has no 3.14 wheels in the locked version. Keep the cap consistent across `pyproject.toml`, both Conda files, and both launchers.
 - `start.bat` / `start.sh` pick the first available setup: uv → existing `.venv` → Conda `md_webui` → create `.venv` from a system Python. `.gitattributes` forces LF everywhere except `*.bat` (CRLF, required by cmd.exe).
+
+## Portable executable
+
+- `packaging/markitdown-web.spec` builds a one-file, console PyInstaller executable from `run.py`; it lists `app/static` and `app/templates` as data and uses `collect_all` for packages that read their own data at runtime (magika model, pdfminer cmaps, pptx templates). Add a package there if a new dependency loads files from its install folder.
+- `run.py` detects `sys.frozen`: it then opens the browser once the port answers (`MARKITDOWN_WEB_OPEN_BROWSER=0` disables) and waits for Enter before exiting on startup errors.
+- PyInstaller cannot cross-compile. `.github/workflows/windows-exe.yml` builds on Windows and runs `packaging/smoke_test.py` against the exe; the same spec and smoke test also run on Linux to check packaging. `pyinstaller` lives in the `build` dependency group (`uv run --group build ...`).
 
 ## Architecture
 
