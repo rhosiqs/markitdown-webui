@@ -2,7 +2,8 @@
 
 Enabled only when MARKITDOWN_DESKTOP_SELFTEST names a folder of sample files. Each sample is
 fed to the page's own convertFile(); the resulting editor and preview text is written to
-result.json in that folder, then the window closes.
+result.json in that folder. The window then stays open for LINGER_SECONDS, so the harness
+can catch background connections, and closes.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import json
 import time
 from pathlib import Path
 
+LINGER_SECONDS = 15
 READY_JS = "typeof convertFile === 'function' && !!(window.pywebview && window.pywebview.api"
 READY_JS += " && window.pywebview.api.begin_upload)"
 STATE_JS = (
@@ -53,4 +55,5 @@ def run_self_test(window, folder: str) -> None:
         result["error"] = repr(exc)
     finally:
         (folder_path / "result.json").write_text(json.dumps(result), encoding="utf-8")
+        time.sleep(LINGER_SECONDS)
         window.destroy()

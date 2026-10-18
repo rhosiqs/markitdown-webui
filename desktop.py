@@ -17,7 +17,8 @@ from app.desktop import DesktopApi, build_page
 
 # WebView2 otherwise contacts Microsoft in the background (configuration, component updates,
 # SmartScreen). These switches turn that off and make every host name fail to resolve, so the
-# window stays offline. ElasticOverscroll repeats pywebview's own --disable-features value.
+# window stays offline. ElasticOverscroll repeats pywebview's own --disable-features value,
+# which Chromium would otherwise drop because the last --disable-features wins.
 OFFLINE_BROWSER_ARGUMENTS = (
     "--disable-background-networking --disable-component-update --disable-domain-reliability "
     "--disable-sync --no-pings --disable-features=ElasticOverscroll,msSmartScreenProtection "
@@ -36,6 +37,30 @@ def _show_error(message: str) -> None:
         print(message, file=sys.stderr)
 
 
+def _keep_webview2_offline() -> None:
+    """Append OFFLINE_BROWSER_ARGUMENTS to the WebView2 browser that pywebview starts.
+
+    pywebview sets AdditionalBrowserArguments itself, offers no setting to extend it, and its
+    value wins over WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS. So swap in a WebView2 subclass that
+    extends the arguments right before the browser is created.
+    """
+    from webview.platforms import edgechromium
+
+    base = edgechromium.WebView2
+
+    class OfflineWebView2(base):
+        __namespace__ = "MarkItDownWeb"
+
+        def EnsureCoreWebView2Async(self, environment):  # noqa: N802 - .NET method name
+            properties = self.CreationProperties
+            current = properties.AdditionalBrowserArguments or ""
+            if OFFLINE_BROWSER_ARGUMENTS not in current:
+                properties.AdditionalBrowserArguments = f"{current} {OFFLINE_BROWSER_ARGUMENTS}"
+            return base.EnsureCoreWebView2Async(self, environment)
+
+    edgechromium.WebView2 = OfflineWebView2
+
+
 def main() -> int:
     window = webview.create_window(
         SETTINGS.app_name,
@@ -52,7 +77,6 @@ def main() -> int:
 
         func, args = run_self_test, (window, self_test)
 
-    os.environ["WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS"] = OFFLINE_BROWSER_ARGUMENTS
     # The packaged app has no console, so startup failures must surface in a dialog.
     try:
         if sys.platform == "win32":
@@ -62,6 +86,7 @@ def main() -> int:
             if winforms.renderer != "edgechromium":
                 _show_error(WEBVIEW2_MISSING)
                 return 1
+            _keep_webview2_offline()
         # private_mode keeps WebView2 from persisting cookies, storage, or cache after exit.
         webview.start(func, args, private_mode=True)
     except Exception as exc:
